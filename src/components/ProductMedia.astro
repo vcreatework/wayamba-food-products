@@ -1,0 +1,26 @@
+---
+// Shows a product photo if one exists, otherwise a generated spice illustration.
+// Photo priority: product.image (URL, e.g. from Supabase Storage) → src/assets/products/<slug>.jpg|png|webp → illustration
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import SpiceArt from './SpiceArt.astro';
+import type { Product } from '../lib/types';
+
+interface Props { product: Product; mode?: 'card' | 'hero'; eager?: boolean; sizes?: string }
+const { product, mode = 'card', eager = false, sizes = '(max-width: 700px) 100vw, 33vw' } = Astro.props;
+const local = import.meta.glob<{ default: ImageMetadata }>('../assets/products/*.{jpg,jpeg,png,webp}', { eager: true });
+const key = Object.keys(local).find((k) => k.split('/').pop()!.replace(/\.\w+$/, '') === product.slug);
+const localImg = key ? local[key].default : undefined;
+const remote = product.image && /^https?:\/\//.test(product.image) ? product.image : undefined;
+const widths = mode === 'hero' ? [640, 1000, 1400] : [400, 700, 1000];
+---
+{localImg ? (
+  <Image src={localImg} alt={product.name} widths={widths} sizes={sizes} loading={eager ? 'eager' : 'lazy'} class="media-img" />
+) : remote ? (
+  <Image src={remote} alt={product.name} inferSize widths={widths} sizes={sizes} loading={eager ? 'eager' : 'lazy'} class="media-img" />
+) : (
+  <SpiceArt slug={product.slug} shape={product.shape} palette={product.palette} mode={mode} label={product.name} />
+)}
+<style>
+  .media-img { width: 100%; height: 100%; object-fit: cover; }
+</style>

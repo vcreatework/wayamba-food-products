@@ -1,0 +1,315 @@
+---
+import Base from '../layouts/Base.astro';
+import FloatingSpices from '../components/FloatingSpices.astro';
+import ProductCard from '../components/ProductCard.astro';
+import ProductMedia from '../components/ProductMedia.astro';
+import WaIcon from '../components/WaIcon.astro';
+import Arrow from '../components/Arrow.astro';
+import { getProducts } from '../lib/catalog';
+import { u } from '../lib/url';
+import { waLink, generalMessage } from '../lib/whatsapp';
+import { SITE } from '../config';
+
+const products = await getProducts();
+const featured = products.filter((p) => p.featured).slice(0, 6);
+const gradeCount = products.reduce((n, p) => n + (p.variants?.length ?? 0), 0);
+const steps = [
+  { t: 'Sourced', d: 'Bought direct from growers and collectors across the spice districts of Sri Lanka.' },
+  { t: 'Cleaned', d: 'Machine and hand cleaned to remove dust, stones, stems and foreign matter.' },
+  { t: 'Graded', d: 'Sorted by size, density and colour into consistent trade grades.' },
+  { t: 'Ground & blended', d: 'Milled fresh in small batches. No fillers, no artificial colour.' },
+  { t: 'Packed & delivered', d: 'Sealed in food-grade packs from 100 g to 50 kg and delivered island-wide.' },
+];
+const buyers = [
+  { t: 'Wholesalers & distributors', d: 'Steady supply in 25 kg and 50 kg sacks.' },
+  { t: 'Retail shops & supermarkets', d: 'Ready-to-sell packs, or bulk to repack.' },
+  { t: 'Hotels & restaurants', d: 'Consistent grades for kitchens that cook every day.' },
+  { t: 'Food manufacturers', d: 'Ground spices and custom blends to your spec.' },
+  { t: 'Private label', d: 'Your brand on our spices and curry powders.' },
+  { t: 'Ayurveda & extraction', d: 'Featherings, stems and broken grades for processing.' },
+];
+---
+<Base dark>
+  <!-- HERO -->
+  <section class="hero" data-parallax-host>
+    <video class="hero-video" autoplay muted loop playsinline preload="metadata" poster={u('/media/hero-poster.webp')} aria-hidden="true">
+      <source src={u('/media/hero-placeholder.webm')} type="video/webm" />
+      <source src={u('/media/hero-placeholder.mp4')} type="video/mp4" />
+    </video>
+    <div class="hero-shade"></div>
+    <FloatingSpices seed="home-hero" count={18} />
+    <div class="container hero-inner">
+      <span class="eyebrow light" data-reveal>Wholesale spice supplier · Galgamuwa, Sri Lanka</span>
+      <h1 data-split data-split-now>Pure Ceylon spices, <em>graded</em> for wholesale.</h1>
+      <p class="hero-lead" data-reveal>Cinnamon, pepper, cloves, cardamom, turmeric and curry powders, sourced from Sri Lanka's spice districts and packed for traders, kitchens and manufacturers.</p>
+      <div class="hero-actions" data-reveal>
+        <a class="btn btn-light btn-lg" href={u('/spices/')} data-magnetic>Explore our spices <Arrow /></a>
+        <a class="btn btn-wa btn-lg" href={waLink(generalMessage)} target="_blank" rel="noopener" data-magnetic><WaIcon /> Ask for prices</a>
+      </div>
+    </div>
+    <div class="scroll-cue" aria-hidden="true"><span></span></div>
+  </section>
+
+  <!-- MARQUEE -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      {[0, 1].map(() => (
+        <div class="marquee-set">
+          {products.map((p) => <span>{p.name}<i>✦</i></span>)}
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <!-- STATEMENT -->
+  <section class="section statement">
+    <div class="container">
+      <span class="eyebrow">Who we are</span>
+      <p class="statement-text" id="statement">
+        From the spice gardens of Sri Lanka to your store room. Wayamba Food Products cleans, grades and packs authentic Ceylon spices for businesses that need the same quality, every order.
+      </p>
+      <div class="stats">
+        <div data-reveal><strong><span data-count={products.length}>{products.length}</span>+</strong><span>Spices & blends</span></div>
+        <div data-reveal><strong><span data-count={gradeCount}>{gradeCount}</span>+</strong><span>Grades & forms</span></div>
+        <div data-reveal><strong>100g<small>–</small>50kg</strong><span>Pack sizes</span></div>
+        <div data-reveal><strong>Islandwide</strong><span>Delivery across Sri Lanka</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURED (horizontal scroll on desktop) -->
+  <section class="featured" id="featured">
+    <div class="featured-pin">
+      <div class="container featured-head">
+        <div>
+          <span class="eyebrow">Signature range</span>
+          <h2 data-split>Our most requested spices</h2>
+        </div>
+        <a href={u('/spices/')} class="btn btn-ghost">View all {products.length} <Arrow /></a>
+      </div>
+      <div class="featured-track">
+        {featured.map((p, i) => (
+          <a class="feat" href={u(`/spices/${p.slug}/`)} style={`--bg:${p.palette?.[0]};--ac:${p.palette?.[1]}`}>
+            <div class="feat-media"><ProductMedia product={p} sizes="(max-width: 860px) 85vw, 40vw" /></div>
+            <div class="feat-info">
+              <span class="feat-num">{String(i + 1).padStart(2, '0')}</span>
+              <h3>{p.name}</h3>
+              <p>{p.tagline}</p>
+              <span class="feat-link">View grades <Arrow /></span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- PROCESS -->
+  <section class="section process">
+    <div class="container process-grid">
+      <div class="process-intro">
+        <span class="eyebrow">Our process</span>
+        <h2 data-split>Clean. Graded. <em class="accent">Consistent.</em></h2>
+        <p class="lead" data-reveal>Every batch goes through the same five steps, so the spice you buy this month matches the one you bought last month.</p>
+      </div>
+      <ol class="steps" id="steps">
+        <span class="steps-line"><span class="steps-fill"></span></span>
+        {steps.map((s, i) => (
+          <li class="step">
+            <span class="step-dot">{i + 1}</span>
+            <div>
+              <h3>{s.t}</h3>
+              <p class="muted">{s.d}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- BUYERS -->
+  <section class="section buyers grain">
+    <div class="container">
+      <span class="eyebrow light">Who we supply</span>
+      <h2 data-split>Built for businesses that buy in bulk</h2>
+      <div class="buyer-grid">
+        {buyers.map((b, i) => (
+          <div class="buyer" data-reveal>
+            <span class="buyer-n">{String(i + 1).padStart(2, '0')}</span>
+            <h3>{b.t}</h3>
+            <p>{b.d}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW TO INQUIRE -->
+  <section class="section howto">
+    <div class="container">
+      <div class="howto-head">
+        <span class="eyebrow">Wholesale prices</span>
+        <h2 data-split>Get a price in three taps</h2>
+        <p class="lead" data-reveal>Our prices move with the season and the market, so we quote fresh for every order. Message us and we'll reply with today's rate.</p>
+      </div>
+      <div class="howto-grid">
+        <div class="howto-card" data-reveal><span>1</span><h3>Pick a spice</h3><p class="muted">Open any spice and choose the grade, form and pack size you need.</p></div>
+        <div class="howto-card" data-reveal><span>2</span><h3>Tap "Inquire on WhatsApp"</h3><p class="muted">WhatsApp opens with your request and the product link already written.</p></div>
+        <div class="howto-card" data-reveal><span>3</span><h3>Get today's price</h3><p class="muted">We reply with price, availability and delivery to your town.</p></div>
+      </div>
+      <div class="howto-cta" data-reveal>
+        <a class="btn btn-lg" href={u('/spices/')} data-magnetic>Browse spices <Arrow /></a>
+        <a class="btn btn-ghost btn-lg" href={`tel:${SITE.phone.replace(/\s/g, '')}`}>Call {SITE.phone}</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import { gsap, ScrollTrigger, reduce } from '../scripts/animations';
+
+  if (!reduce) {
+    // Hero floaters: drift in, bob, and scatter on scroll
+    const floaters = gsap.utils.toArray<SVGElement>('.hero .floater');
+    gsap.from(floaters, { opacity: 0, scale: 0.4, y: 80, duration: 1.6, ease: 'expo.out', stagger: 0.04, delay: 0.2 });
+    floaters.forEach((f) => {
+      const d = parseFloat(f.dataset.depth ?? '1');
+      gsap.to(f, { y: '+=' + (10 + d * 8), rotation: '+=' + (d * 8), duration: 3 + d, ease: 'sine.inOut', repeat: -1, yoyo: true });
+      gsap.to(f, { yPercent: -180 * d, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
+    });
+    gsap.to('.hero-inner', { yPercent: 25, opacity: 0.2, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
+    gsap.to('.hero-video', { scale: 1.15, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
+
+    // Marquee speeds up with scroll velocity
+    const track = document.querySelector<HTMLElement>('.marquee-track');
+    if (track) {
+      const loop = gsap.to(track, { xPercent: -50, duration: 40, ease: 'none', repeat: -1 });
+      ScrollTrigger.create({
+        onUpdate: (self) => {
+          const v = Math.min(Math.abs(self.getVelocity()) / 400, 6);
+          gsap.to(loop, { timeScale: 1 + v, duration: 0.2, overwrite: true });
+          gsap.to(loop, { timeScale: 1, duration: 1.2, delay: 0.2 });
+        },
+      });
+    }
+
+    // Statement: words light up as you scroll
+    const st = document.getElementById('statement');
+    if (st) {
+      st.innerHTML = st.textContent!.trim().split(/\s+/).map((w) => `<span class="sw">${w}</span>`).join(' ');
+      gsap.fromTo(st.querySelectorAll('.sw'), { opacity: 0.15 }, {
+        opacity: 1, stagger: 0.1, ease: 'none',
+        scrollTrigger: { trigger: st, start: 'top 80%', end: 'bottom 45%', scrub: true },
+      });
+    }
+
+    // Featured: pin and scroll sideways on wide screens
+    const mm = gsap.matchMedia();
+    mm.add('(min-width: 861px)', () => {
+      const trackEl = document.querySelector<HTMLElement>('.featured-track')!;
+      const dist = () => trackEl.scrollWidth - window.innerWidth + 80;
+      gsap.to(trackEl, {
+        x: () => -dist(),
+        ease: 'none',
+        scrollTrigger: { trigger: '.featured', pin: '.featured-pin', start: 'top top', end: () => '+=' + dist(), scrub: 0.6, invalidateOnRefresh: true },
+      });
+    });
+    mm.add('(max-width: 860px)', () => {
+      gsap.from('.feat', { opacity: 0, y: 60, stagger: 0.1, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: '.featured-track', start: 'top 85%' } });
+    });
+
+    // Process line fills as you scroll through steps
+    gsap.fromTo('.steps-fill', { scaleY: 0 }, { scaleY: 1, ease: 'none', scrollTrigger: { trigger: '#steps', start: 'top 70%', end: 'bottom 60%', scrub: true } });
+    gsap.utils.toArray<HTMLElement>('.step').forEach((s) => {
+      gsap.from(s, { opacity: 0.2, x: 30, duration: 0.8, ease: 'power3.out', scrollTrigger: { trigger: s, start: 'top 75%', toggleActions: 'play none none reverse' } });
+      ScrollTrigger.create({ trigger: s, start: 'top 65%', onEnter: () => s.classList.add('on'), onLeaveBack: () => s.classList.remove('on') });
+    });
+  }
+</script>
+
+<style>
+  .hero { position: relative; min-height: 100svh; display: flex; align-items: flex-end; color: #fff; overflow: hidden; background: var(--deep); padding: 140px 0 clamp(70px, 10vh, 120px); }
+  .hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .hero-shade { position: absolute; inset: 0; background: radial-gradient(ellipse at 70% 30%, rgba(181, 199, 44, 0.15), transparent 55%), linear-gradient(180deg, rgba(18, 38, 26, 0.6) 0%, rgba(18, 38, 26, 0.45) 40%, rgba(18, 38, 26, 0.95) 100%); }
+  .hero-inner { position: relative; z-index: 3; }
+  .hero :global(.floaters) { z-index: 1; }
+  .hero :global(.floater) { opacity: .8; }
+  @media (max-width: 700px) { .hero :global(.floater:nth-child(2n)) { display: none; } .hero :global(.floater) { opacity: .55; } }
+  .hero h1 { max-width: 14ch; margin: 18px 0 24px; font-weight: 400; }
+  .hero h1 em { color: var(--lime); }
+  .eyebrow.light { color: var(--lime); }
+  .hero-lead { max-width: 52ch; font-size: clamp(1.05rem, 1.5vw, 1.2rem); color: rgba(255, 255, 255, 0.82); }
+  .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 30px; }
+  .scroll-cue { position: absolute; right: var(--gutter); bottom: 40px; width: 26px; height: 44px; border-radius: 20px; border: 1.5px solid rgba(255, 255, 255, 0.5); z-index: 2; }
+  .scroll-cue span { position: absolute; left: 50%; top: 8px; width: 4px; height: 8px; margin-left: -2px; border-radius: 4px; background: #fff; animation: cue 1.8s var(--ease) infinite; }
+  @keyframes cue { 0% { opacity: 0; transform: translateY(0) } 30% { opacity: 1 } 100% { opacity: 0; transform: translateY(16px) } }
+  @media (max-width: 600px) { .scroll-cue { display: none; } .hero-actions .btn { width: 100%; } }
+
+  .marquee { background: var(--lime); color: var(--deep); overflow: hidden; padding: 18px 0; border-block: 1px solid rgba(0, 0, 0, 0.08); }
+  .marquee-track { display: flex; width: max-content; }
+  .marquee-set { display: flex; }
+  .marquee span { font-family: var(--font-display); font-size: clamp(1.3rem, 2.4vw, 2rem); white-space: nowrap; padding-right: 28px; display: inline-flex; align-items: center; gap: 28px; }
+  .marquee i { font-style: normal; font-size: 0.7em; color: var(--forest); }
+
+  .statement-text { font-family: var(--font-display); font-size: clamp(1.7rem, 3.8vw, 3.2rem); line-height: 1.2; letter-spacing: -0.01em; margin: 26px 0 70px; max-width: 26ch; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; border-top: 1px solid var(--line); padding-top: 40px; }
+  .stats strong { display: block; font-family: var(--font-display); font-weight: 400; font-size: clamp(1.7rem, 3.4vw, 3rem); white-space: nowrap; line-height: 1; color: var(--forest); }
+  .stats strong small { font-size: 0.5em; color: var(--muted); }
+  .stats span:not([data-count]) { color: var(--muted); font-size: 0.95rem; }
+  .stats > div > span { display: block; margin-top: 10px; }
+  @media (max-width: 760px) { .stats { grid-template-columns: 1fr 1fr; row-gap: 36px; } }
+
+  .featured { background: var(--cream); }
+  .featured-pin { padding: clamp(70px, 9vw, 110px) 0; overflow: hidden; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
+  .featured-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 48px; }
+  .featured-head h2 { margin-top: 12px; }
+  .featured-track { display: flex; gap: 28px; padding-left: max(var(--gutter), calc((100vw - var(--max)) / 2 + var(--gutter))); padding-right: var(--gutter); width: max-content; }
+  .feat { width: min(36vw, 520px); flex: none; display: grid; grid-template-rows: auto 1fr; border-radius: var(--radius-lg); overflow: hidden; background: var(--bg); color: #fff; transition: transform .5s var(--ease); }
+  .feat:hover { transform: translateY(-8px); }
+  .feat-media { aspect-ratio: 5 / 4; overflow: hidden; }
+  .feat-media :global(svg), .feat-media :global(img) { transition: transform 1.2s var(--ease); }
+  .feat:hover .feat-media :global(svg), .feat:hover .feat-media :global(img) { transform: scale(1.06); }
+  .feat-info { padding: 26px 28px 30px; }
+  .feat-num { font-family: var(--font-display); color: var(--ac); filter: brightness(1.3); }
+  .feat h3 { font-size: clamp(1.6rem, 2.4vw, 2.2rem); margin: 6px 0 10px; }
+  .feat p { color: rgba(255, 255, 255, 0.75); margin-bottom: 18px; }
+  .feat-link { display: inline-flex; gap: 8px; align-items: center; font-weight: 700; font-size: 0.92rem; }
+  .feat-link :global(svg) { width: 18px; }
+  @media (max-width: 860px) {
+    .featured-pin { min-height: 0; }
+    .featured-track { width: auto; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 12px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .featured-track::-webkit-scrollbar { display: none; }
+    .feat { width: 82vw; scroll-snap-align: start; }
+  }
+
+  .process-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: clamp(40px, 8vw, 120px); align-items: start; }
+  .process-intro { position: sticky; top: 120px; }
+  .process-intro h2 { margin: 14px 0 22px; }
+  .steps { list-style: none; margin: 0; padding: 0 0 0 0; position: relative; display: grid; gap: 54px; }
+  .steps-line { position: absolute; left: 23px; top: 10px; bottom: 10px; width: 2px; background: var(--line); }
+  .steps-fill { position: absolute; inset: 0; background: linear-gradient(var(--lime), var(--forest)); transform-origin: top; }
+  .step { display: grid; grid-template-columns: 48px 1fr; gap: 24px; position: relative; }
+  .step-dot { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--paper); box-shadow: inset 0 0 0 2px var(--line); font-weight: 800; transition: background .4s, color .4s, box-shadow .4s; position: relative; z-index: 1; }
+  .step.on .step-dot { background: var(--forest); color: #fff; box-shadow: 0 0 0 6px rgba(181, 199, 44, 0.3); }
+  .step h3 { margin: 8px 0 8px; }
+  @media (max-width: 860px) { .process-grid { grid-template-columns: 1fr; } .process-intro { position: static; } }
+
+  .buyers { background: var(--forest); color: #fff; overflow: hidden; }
+  .buyers h2 { margin: 14px 0 56px; max-width: 18ch; }
+  .buyer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: rgba(255, 255, 255, 0.12); border-radius: var(--radius-lg); overflow: hidden; }
+  .buyer { background: var(--forest); padding: 36px 30px; transition: background .4s; }
+  .buyer:hover { background: #255a2e; }
+  .buyer-n { font-family: var(--font-display); color: var(--lime); }
+  .buyer h3 { margin: 18px 0 10px; }
+  .buyer p { color: rgba(255, 255, 255, 0.7); margin: 0; }
+  @media (max-width: 860px) { .buyer-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .buyer-grid { grid-template-columns: 1fr; } }
+
+  .howto-head { max-width: 760px; margin-bottom: 56px; }
+  .howto-head h2 { margin: 14px 0 20px; }
+  .howto-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .howto-card { padding: 34px 30px; border-radius: var(--radius-lg); background: var(--cream); position: relative; overflow: hidden; }
+  .howto-card span { font-family: var(--font-display); font-size: 5rem; line-height: 1; color: var(--lime); opacity: .8; }
+  .howto-card h3 { margin: 18px 0 10px; }
+  .howto-cta { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 44px; }
+  @media (max-width: 860px) { .howto-grid { grid-template-columns: 1fr; } }
+</style>

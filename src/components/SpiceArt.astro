@@ -1,0 +1,72 @@
+---
+// Generated illustration used as a placeholder until real product photos are added.
+import { shapeOf } from '../lib/shapes';
+import { seeded } from '../lib/rand';
+
+interface Props {
+  slug: string;
+  shape?: string;
+  palette?: [string, string];
+  mode?: 'card' | 'hero';
+  label?: string;
+  class?: string;
+}
+const { slug, shape, palette = ['#2a1e12', '#b07a3a'], mode = 'card', label = '', class: cls = '' } = Astro.props;
+const [bg, accent] = palette;
+const s = shapeOf(shape);
+const rnd = seeded(slug + mode);
+const id = `sa-${slug}-${mode}`;
+const W = mode === 'hero' ? 800 : 400;
+const H = mode === 'hero' ? 800 : 300;
+const count = mode === 'hero' ? 26 : 11;
+
+const pieces = Array.from({ length: count }, (_, i) => {
+  const big = mode === 'hero' && i === 0;
+  const size = big ? 360 : (mode === 'hero' ? 40 + rnd() * 90 : 36 + rnd() * 60);
+  const x = big ? W / 2 - size / 2 : rnd() * (W - size * 0.6) - size * 0.2;
+  const y = big ? H / 2 - size / 2 : rnd() * (H - size * 0.6) - size * 0.2;
+  const r = Math.round(rnd() * 360);
+  const depth = big ? 0.2 : (0.4 + rnd() * 1.6).toFixed(2);
+  const tone = rnd();
+  const opacity = big ? 1 : (0.35 + rnd() * 0.6).toFixed(2);
+  return { size, x, y, r, depth, tone, opacity, big };
+});
+---
+<svg
+  class={`spice-art art-${mode} ${cls}`}
+  viewBox={`0 0 ${W} ${H}`}
+  preserveAspectRatio="xMidYMid slice"
+  role="img"
+  aria-label={label || 'Spice illustration'}
+>
+  <defs>
+    <radialGradient id={`${id}-bg`} cx="35%" cy="30%" r="85%">
+      <stop offset="0%" stop-color={accent} stop-opacity="0.38" />
+      <stop offset="55%" stop-color={bg} stop-opacity="1" />
+      <stop offset="100%" stop-color={bg} />
+    </radialGradient>
+    <linearGradient id={`${id}-fill`} x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color={accent} />
+      <stop offset="100%" stop-color={bg} stop-opacity="0.9" />
+    </linearGradient>
+    <filter id={`${id}-grain`}>
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch" />
+      <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.18 0" />
+      <feComposite in2="SourceGraphic" operator="in" />
+    </filter>
+    <g id={`${id}-shape`}>
+      <path d={s.body} fill={`url(#${id}-fill)`} />
+      {s.detail && <path d={s.detail} fill="none" stroke={bg} stroke-opacity="0.55" stroke-width="2.2" stroke-linecap="round" />}
+      {s.highlight && <path d={s.highlight} fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="2.4" stroke-linecap="round" />}
+    </g>
+  </defs>
+  <rect width={W} height={H} fill={`url(#${id}-bg)`} />
+  {pieces.map((p) => (
+    <g class={p.big ? 'sp sp-hero' : 'sp'} data-depth={p.depth} opacity={p.opacity}>
+      <g transform={`translate(${p.x.toFixed(1)} ${p.y.toFixed(1)}) rotate(${p.r} ${p.size / 2} ${p.size / 2}) scale(${(p.size / 100).toFixed(3)})`}>
+        <use href={`#${id}-shape`} />
+      </g>
+    </g>
+  ))}
+  <rect width={W} height={H} filter={`url(#${id}-grain)`} fill={bg} opacity="0.9" style="mix-blend-mode:overlay" />
+</svg>

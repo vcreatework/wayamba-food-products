@@ -1,0 +1,50 @@
+---
+import ProductMedia from './ProductMedia.astro';
+import Arrow from './Arrow.astro';
+import type { Product } from '../lib/types';
+import { u } from '../lib/url';
+
+interface Props { product: Product; index?: number }
+const { product: p, index } = Astro.props;
+const accent = p.palette?.[1] ?? '#a65a2a';
+---
+<a
+  href={u(`/spices/${p.slug}/`)}
+  class="card"
+  data-tilt
+  data-name={p.name.toLowerCase() + ' ' + (p.localName ?? '').toLowerCase() + ' ' + (p.tagline ?? '').toLowerCase()}
+  data-category={p.category}
+  data-forms={(p.forms ?? []).join('|')}
+  style={`--accent:${accent}`}
+>
+  <div class="card-frame">
+    <div class="card-media"><ProductMedia product={p} /></div>
+    {typeof index === 'number' && <span class="card-index">{String(index + 1).padStart(2, '0')}</span>}
+    <span class="card-cat">{p.category}</span>
+  </div>
+  <div class="card-body">
+    <div>
+      <h3>{p.name}</h3>
+      {p.localName && <p class="local">{p.localName}</p>}
+    </div>
+    <span class="card-go" aria-hidden="true"><Arrow /></span>
+  </div>
+  {p.variants && p.variants.length > 0 && (
+    <p class="card-meta">{p.variants.length} grades · {(p.forms ?? []).join(', ')}</p>
+  )}
+</a>
+<style>
+  .card { display: block; position: relative; transform-style: preserve-3d; }
+  .card-frame { position: relative; aspect-ratio: 4 / 3; border-radius: var(--radius); overflow: hidden; background: var(--cream); isolation: isolate; }
+  .card-media { position: absolute; inset: -14px; }
+  .card-index { position: absolute; top: 14px; left: 16px; font-family: var(--font-display); color: rgba(255, 255, 255, 0.75); font-size: 0.95rem; }
+  .card-cat { position: absolute; bottom: 14px; left: 14px; padding: 5px 12px; border-radius: 999px; background: rgba(251, 248, 241, 0.9); font-size: 0.75rem; font-weight: 700; letter-spacing: .04em; }
+  .card-body { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 4px 0; }
+  .card-body h3 { transition: color .3s; }
+  .local { margin: 4px 0 0; font-size: 0.9rem; color: var(--muted); font-style: italic; }
+  .card-meta { margin: 8px 4px 0; font-size: 0.85rem; color: var(--muted); }
+  .card-go { flex: none; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; box-shadow: inset 0 0 0 1.5px var(--line); transition: background .35s var(--ease), color .35s, transform .35s var(--ease); }
+  .card-go :global(svg) { width: 18px; }
+  .card:hover .card-go { background: var(--forest); color: #fff; transform: rotate(-45deg); box-shadow: none; }
+  .card:hover h3 { color: var(--leaf); }
+</style>

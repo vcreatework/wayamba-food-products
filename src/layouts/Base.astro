@@ -1,0 +1,220 @@
+---
+import '../styles/global.css';
+import { Image } from 'astro:assets';
+import logoMark from '../assets/logo-mark.png';
+import logoWhite from '../assets/logo-mark-white.png';
+import WaIcon from '../components/WaIcon.astro';
+import { SITE, NAV } from '../config';
+import { u } from '../lib/url';
+import { waLink, generalMessage } from '../lib/whatsapp';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  dark?: boolean; // header starts on a dark hero
+  jsonLd?: Record<string, unknown>;
+}
+const { title, description = SITE.description, image, dark = false, jsonLd } = Astro.props;
+const fullTitle = title ? `${title} | ${SITE.name}` : `${SITE.name} | Wholesale Ceylon Spices, Sri Lanka`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const path = Astro.url.pathname.replace(import.meta.env.BASE_URL.replace(/\/$/, ''), '') || '/';
+const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
+const orgLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WholesaleStore',
+  name: SITE.name,
+  address: SITE.address,
+  telephone: SITE.phone,
+  email: SITE.email,
+  url: new URL(u('/'), Astro.site).toString(),
+};
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/png" href={u('/favicon.png')} />
+    <meta name="theme-color" content="#1f4a26" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    {image && <meta property="og:image" content={image} />}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..700,0..100;1,9..144,300..700,0..100&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script is:inline>document.documentElement.classList.add('js')</script>
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd ?? orgLd)} />
+  </head>
+  <body>
+    <a class="sr-only" href="#main">Skip to content</a>
+    <header class:list={['site-header', { 'on-dark': dark }]} id="site-header">
+      <div class="container bar">
+        <a href={u('/')} class="brand" aria-label={`${SITE.name} home`}>
+          <Image src={logoMark} alt="" width={56} densities={[1, 2]} class="brand-mark mark-color" loading="eager" />
+          <Image src={logoWhite} alt="" width={56} densities={[1, 2]} class="brand-mark mark-white" loading="eager" />
+          <span class="brand-text">
+            <strong>wayamba</strong>
+            <small>Food Products</small>
+          </span>
+        </a>
+        <nav class="nav" aria-label="Main">
+          {NAV.map((n) => (
+            <a href={u(n.href)} class:list={{ active: isActive(n.href) }}>{n.label}</a>
+          ))}
+        </nav>
+        <a class="btn btn-wa header-cta" href={waLink(generalMessage)} target="_blank" rel="noopener" data-magnetic>
+          <WaIcon /> <span>Get prices</span>
+        </a>
+        <button class="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">
+          <span></span><span></span>
+        </button>
+      </div>
+      <div class="mobile-nav" id="mobile-nav">
+        {NAV.map((n) => <a href={u(n.href)}>{n.label}</a>)}
+        <a class="btn btn-wa" href={waLink(generalMessage)} target="_blank" rel="noopener"><WaIcon /> Ask for wholesale prices</a>
+      </div>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="site-footer grain">
+      <div class="container">
+        <div class="foot-cta" data-reveal>
+          <h2>Buying in bulk?<br /><em>Let's talk prices.</em></h2>
+          <a class="btn btn-light btn-lg" href={waLink(generalMessage)} target="_blank" rel="noopener" data-magnetic>
+            <WaIcon /> Message us on WhatsApp
+          </a>
+        </div>
+        <div class="foot-grid">
+          <div class="foot-brand">
+            <Image src={logoWhite} alt={SITE.name} width={140} />
+            <p>{SITE.tagline}</p>
+          </div>
+          <div>
+            <h4>Visit</h4>
+            <p>{SITE.address}</p>
+            <p class="small">{SITE.hours}</p>
+          </div>
+          <div>
+            <h4>Contact</h4>
+            <p><a href={`tel:${SITE.phone.replace(/\s/g, '')}`}>{SITE.phone}</a><br /><a href={`mailto:${SITE.email}`}>{SITE.email}</a></p>
+          </div>
+          <div>
+            <h4>Explore</h4>
+            <p>{NAV.map((n) => <><a href={u(n.href)}>{n.label}</a><br /></>)}</p>
+          </div>
+        </div>
+        <div class="foot-bottom">
+          <span>© {new Date().getFullYear()} {SITE.name}. All rights reserved.</span>
+          <span>Wholesale only. Prices on request.</span>
+        </div>
+      </div>
+    </footer>
+
+    <a class="wa-float" href={waLink(generalMessage)} target="_blank" rel="noopener" aria-label="Chat with us on WhatsApp">
+      <WaIcon />
+    </a>
+
+    <script>
+      import { initAnimations } from '../scripts/animations';
+      initAnimations();
+
+      const header = document.getElementById('site-header')!;
+      const btn = header.querySelector<HTMLButtonElement>('.menu-btn')!;
+      btn.addEventListener('click', () => {
+        const open = header.classList.toggle('menu-open');
+        btn.setAttribute('aria-expanded', String(open));
+        document.body.style.overflow = open ? 'hidden' : '';
+      });
+      let last = 0;
+      window.addEventListener('scroll', () => {
+        const y = window.scrollY;
+        header.classList.toggle('scrolled', y > 40);
+        header.classList.toggle('hide', y > 400 && y > last && !header.classList.contains('menu-open'));
+        last = y;
+      }, { passive: true });
+    </script>
+  </body>
+</html>
+
+<style>
+  .site-header { position: fixed; inset: 0 0 auto; z-index: 50; transition: transform .5s var(--ease), background .4s, box-shadow .4s, color .4s; color: var(--ink); }
+  .site-header.hide { transform: translateY(-100%); }
+  .site-header.scrolled { background: rgba(251, 248, 241, 0.88); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 1px 0 var(--line); }
+  .bar { display: flex; align-items: center; gap: 28px; height: 84px; }
+  .brand { display: flex; align-items: center; gap: 12px; margin-right: auto; }
+  .brand-mark { width: 56px; height: auto; }
+  .mark-white { display: none; }
+  .brand-text { display: flex; flex-direction: column; line-height: 1; }
+  .brand-text strong { font-family: var(--font-body); font-weight: 600; font-size: 1.4rem; letter-spacing: 0.01em; color: #5c9a4b; }
+  .brand-text small { font-size: 0.62rem; letter-spacing: 0.28em; text-transform: uppercase; font-weight: 700; margin-top: 4px; }
+  .nav { display: flex; gap: 6px; }
+  .nav a { position: relative; padding: 8px 14px; font-weight: 600; font-size: 0.95rem; border-radius: 999px; transition: background .25s; }
+  .nav a:hover { background: rgba(127, 154, 46, 0.14); }
+  .nav a.active::after { content: ''; position: absolute; left: 50%; bottom: 0; width: 5px; height: 5px; border-radius: 50%; background: var(--lime); transform: translateX(-50%); }
+  .header-cta { padding: 11px 20px; }
+
+  .site-header.on-dark:not(.scrolled):not(.menu-open) { color: #fff; }
+  .site-header.on-dark:not(.scrolled):not(.menu-open) .mark-color { display: none; }
+  .site-header.on-dark:not(.scrolled):not(.menu-open) .mark-white { display: block; }
+  .site-header.on-dark:not(.scrolled):not(.menu-open) .brand-text strong { color: var(--lime); }
+
+  .menu-btn { display: none; width: 46px; height: 46px; border-radius: 50%; border: 0; background: rgba(127, 154, 46, 0.16); position: relative; }
+  .menu-btn span { position: absolute; left: 13px; right: 13px; height: 2px; background: currentColor; transition: transform .35s var(--ease); }
+  .menu-btn span:first-child { top: 18px; }
+  .menu-btn span:last-child { top: 26px; }
+  .menu-open .menu-btn span:first-child { transform: translateY(4px) rotate(45deg); }
+  .menu-open .menu-btn span:last-child { transform: translateY(-4px) rotate(-45deg); }
+  .mobile-nav { display: none; }
+
+  @media (max-width: 860px) {
+    .nav, .header-cta { display: none; }
+    .menu-btn { display: block; }
+    .bar { height: 72px; }
+    .brand-mark { width: 46px; }
+    .mobile-nav {
+      display: flex; flex-direction: column; gap: 4px; position: fixed; inset: 72px 0 0; background: var(--paper);
+      padding: 24px var(--gutter); clip-path: inset(0 0 100% 0); transition: clip-path .6s var(--ease); color: var(--ink);
+    }
+    .mobile-nav a:not(.btn) { font-family: var(--font-display); font-size: 2.2rem; padding: 8px 0; border-bottom: 1px solid var(--line); }
+    .mobile-nav .btn { margin-top: 24px; }
+    .menu-open { background: var(--paper); }
+    .menu-open .mobile-nav { clip-path: inset(0 0 0 0); }
+  }
+
+  .site-footer { position: relative; background: var(--deep); color: rgba(255, 255, 255, 0.78); padding: clamp(70px, 10vw, 130px) 0 36px; overflow: hidden; }
+  .site-footer::before { content: ''; position: absolute; width: 900px; height: 900px; right: -300px; top: -400px; background: radial-gradient(circle, rgba(181, 199, 44, 0.18), transparent 60%); pointer-events: none; }
+  .foot-cta { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; flex-wrap: wrap; padding-bottom: 60px; border-bottom: 1px solid rgba(255, 255, 255, 0.12); }
+  .foot-cta h2 { color: #fff; }
+  .foot-cta em { color: var(--lime); }
+  .foot-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 0.8fr; gap: 40px; padding: 56px 0; }
+  .foot-grid h4 { font-family: var(--font-body); font-size: 0.78rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--lime); margin-bottom: 14px; font-weight: 700; }
+  .foot-grid a:hover { color: #fff; }
+  .foot-brand img { width: 120px; margin-bottom: 18px; opacity: .95; }
+  .small { font-size: 0.88rem; opacity: .7; }
+  .foot-bottom { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; font-size: 0.85rem; opacity: .6; padding-top: 24px; border-top: 1px solid rgba(255, 255, 255, 0.12); }
+  @media (max-width: 860px) { .foot-grid { grid-template-columns: 1fr 1fr; } .foot-brand { grid-column: 1 / -1; } }
+  @media (max-width: 480px) { .foot-grid { grid-template-columns: 1fr; } }
+
+  .wa-float {
+    position: fixed; right: 20px; bottom: 20px; z-index: 60; width: 60px; height: 60px; border-radius: 50%;
+    display: grid; place-items: center; background: #25d366; color: #fff; box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.4);
+    transition: transform .3s var(--ease);
+  }
+  .wa-float:hover { transform: scale(1.08); }
+  .wa-float :global(svg) { width: 30px; height: 30px; }
+  .wa-float::before { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid #25d366; animation: ping 2.4s var(--ease) infinite; }
+  @keyframes ping { 0% { transform: scale(1); opacity: .8 } 100% { transform: scale(1.7); opacity: 0 } }
+  @media (prefers-reduced-motion: reduce) { .wa-float::before { animation: none; } }
+</style>

@@ -1,0 +1,154 @@
+---
+import Base from '../../layouts/Base.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import FloatingSpices from '../../components/FloatingSpices.astro';
+import WaIcon from '../../components/WaIcon.astro';
+import { getProducts, categoriesOf, formsOf } from '../../lib/catalog';
+import { waLink } from '../../lib/whatsapp';
+import { SITE } from '../../config';
+
+const products = await getProducts();
+const categories = categoriesOf(products);
+const forms = formsOf(products);
+---
+<Base title="Our Spices" description={`Browse ${products.length} wholesale Ceylon spices, grades and blends from ${SITE.name}. Inquire for wholesale prices on WhatsApp.`}>
+  <section class="list-hero">
+    <FloatingSpices seed="listing" count={10} />
+    <div class="container">
+      <span class="eyebrow" data-reveal>The catalogue</span>
+      <h1 data-split data-split-now>Spices &amp; <em class="accent">blends</em></h1>
+      <p class="lead" data-reveal>Every spice comes in several grades and pack sizes. Open one to choose what you need, then send us a WhatsApp for today's wholesale price.</p>
+    </div>
+  </section>
+
+  <section class="list-body">
+    <div class="container">
+      <div class="filters" data-reveal>
+        <label class="search">
+          <span class="sr-only">Search spices</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+          <input id="q" type="search" placeholder="Search cinnamon, pepper, curry powder…" autocomplete="off" />
+        </label>
+        <div class="chip-row" role="group" aria-label="Category">
+          <button class="fchip on" data-cat="">All</button>
+          {categories.map((c) => <button class="fchip" data-cat={c}>{c}</button>)}
+        </div>
+        <div class="chip-row small" role="group" aria-label="Form">
+          <span class="muted">Form:</span>
+          <button class="fchip on" data-form="">Any</button>
+          {forms.map((f) => <button class="fchip" data-form={f}>{f}</button>)}
+        </div>
+      </div>
+
+      <p class="count" aria-live="polite"><span id="count">{products.length}</span> spices</p>
+
+      <div class="grid" id="grid">
+        {products.map((p, i) => <ProductCard product={p} index={i} />)}
+      </div>
+
+      <div class="empty" id="empty" hidden>
+        <h3>We couldn't find that one.</h3>
+        <p class="muted">We source many more spices than we list. Ask us and we'll check availability.</p>
+        <a class="btn btn-wa" id="empty-wa" href={waLink(`Hello ${SITE.name}, do you supply this spice wholesale?`)} target="_blank" rel="noopener"><WaIcon /> Ask on WhatsApp</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import { gsap, reduce } from '../../scripts/animations';
+  import { Flip } from 'gsap/Flip';
+  import { WHATSAPP_NUMBER, SITE } from '../../config';
+  gsap.registerPlugin(Flip);
+
+  const grid = document.getElementById('grid')!;
+  const cards = [...grid.querySelectorAll<HTMLElement>(':scope > .card')];
+  const q = document.getElementById('q') as HTMLInputElement;
+  const countEl = document.getElementById('count')!;
+  const empty = document.getElementById('empty')!;
+  const emptyWa = document.getElementById('empty-wa') as HTMLAnchorElement;
+  let cat = '';
+  let form = '';
+
+  // Allow links like /spices/?cat=Seeds
+  const params = new URLSearchParams(location.search);
+  if (params.get('cat')) cat = params.get('cat')!;
+  if (params.get('q')) q.value = params.get('q')!;
+
+  function syncChips() {
+    document.querySelectorAll<HTMLButtonElement>('[data-cat]').forEach((b) => b.classList.toggle('on', b.dataset.cat === cat));
+    document.querySelectorAll<HTMLButtonElement>('[data-form]').forEach((b) => b.classList.toggle('on', b.dataset.form === form));
+  }
+
+  function apply(animate = true) {
+    const term = q.value.trim().toLowerCase();
+    const state = animate && !reduce ? Flip.getState(cards) : null;
+    let n = 0;
+    cards.forEach((c) => {
+      const ok =
+        (!term || (c.dataset.name ?? '').includes(term) || (c.dataset.category ?? '').toLowerCase().includes(term)) &&
+        (!cat || c.dataset.category === cat) &&
+        (!form || (c.dataset.forms ?? '').split('|').includes(form));
+      c.style.display = ok ? '' : 'none';
+      if (ok) n++;
+    });
+    countEl.textContent = String(n);
+    empty.hidden = n > 0;
+    if (n === 0) {
+      const msg = `Hello ${SITE.name}, do you supply ${term ? `"${q.value.trim()}"` : 'this spice'} wholesale? Please share the price.`;
+      emptyWa.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+    }
+    if (state) {
+      Flip.from(state, {
+        duration: 0.6,
+        ease: 'power3.inOut',
+        absolute: true,
+        scale: true,
+        onEnter: (els) => gsap.fromTo(els, { opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1, duration: 0.5 }),
+        onLeave: (els) => gsap.to(els, { opacity: 0, scale: 0.85, duration: 0.4 }),
+      });
+    }
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('[data-cat]').forEach((b) =>
+    b.addEventListener('click', () => { cat = b.dataset.cat ?? ''; syncChips(); apply(); }));
+  document.querySelectorAll<HTMLButtonElement>('[data-form]').forEach((b) =>
+    b.addEventListener('click', () => { form = b.dataset.form ?? ''; syncChips(); apply(); }));
+  let t: number;
+  q.addEventListener('input', () => { clearTimeout(t); t = window.setTimeout(() => apply(), 120); });
+
+  syncChips();
+  apply(false);
+
+  if (!reduce) {
+    gsap.from(cards.filter((c) => c.style.display !== 'none'), {
+      opacity: 0, y: 70, duration: 1, ease: 'power3.out', stagger: { each: 0.06, grid: 'auto' }, delay: 0.3, clearProps: 'opacity,transform',
+    });
+  }
+</script>
+
+<style>
+  .list-hero { position: relative; padding: 170px 0 50px; overflow: hidden; background: linear-gradient(180deg, var(--cream), var(--paper)); }
+  .list-hero :global(.floaters) { opacity: 0.35; }
+  .list-hero h1 { margin: 16px 0 20px; }
+  .list-body { padding: 30px 0 clamp(80px, 10vw, 140px); }
+  .filters { display: grid; gap: 14px; padding: 16px 0; background: var(--paper); }
+  @media (min-width: 861px) { .filters { position: sticky; top: 0; z-index: 5; } }
+  .chip-row { mask-image: linear-gradient(90deg, #000 92%, transparent); -webkit-mask-image: linear-gradient(90deg, #000 92%, transparent); }
+  .search { display: flex; align-items: center; gap: 12px; padding: 0 22px; height: 60px; border-radius: 999px; background: #fff; box-shadow: inset 0 0 0 1.5px var(--line); transition: box-shadow .3s; }
+  .search:focus-within { box-shadow: inset 0 0 0 2px var(--leaf), 0 10px 30px -18px rgba(31, 74, 38, 0.5); }
+  .search svg { width: 22px; color: var(--muted); flex: none; }
+  .search input { flex: 1; border: 0; outline: 0; background: transparent; font: inherit; font-size: 1.05rem; min-width: 0; }
+  .chip-row { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; align-items: center; padding-bottom: 2px; }
+  .chip-row::-webkit-scrollbar { display: none; }
+  .chip-row.small { font-size: 0.9rem; }
+  .fchip { flex: none; border: 0; padding: 9px 16px; border-radius: 999px; background: var(--cream); font-weight: 600; font-size: 0.9rem; transition: background .25s, color .25s; }
+  .fchip:hover { background: var(--sand); }
+  .fchip.on { background: var(--forest); color: #fff; }
+  .count { margin: 18px 0 26px; color: var(--muted); font-size: 0.95rem; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 46px 30px; }
+  @media (max-width: 960px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } .list-hero { padding-top: 130px; } }
+  .empty { text-align: center; padding: 60px 20px; display: grid; justify-items: center; gap: 6px; }
+  .empty h3 { font-size: 1.8rem; }
+</style>

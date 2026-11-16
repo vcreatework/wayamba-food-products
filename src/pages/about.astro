@@ -1,0 +1,103 @@
+---
+import Base from '../layouts/Base.astro';
+import FloatingSpices from '../components/FloatingSpices.astro';
+import Arrow from '../components/Arrow.astro';
+import WaIcon from '../components/WaIcon.astro';
+import { Image } from 'astro:assets';
+import logoFull from '../assets/logo-full.png';
+import { u } from '../lib/url';
+import { waLink, generalMessage } from '../lib/whatsapp';
+import { SITE } from '../config';
+
+const values = [
+  { t: 'Honest weight, honest grade', d: 'What is on the bag is what is in the bag. Grades are sorted, not mixed.' },
+  { t: 'Nothing added', d: 'No fillers, starch or artificial colour in our ground spices and blends.' },
+  { t: 'Fair to growers', d: 'We buy directly from farmers and collectors in the spice districts.' },
+  { t: 'Steady supply', d: 'We hold stock through the year so your shelves and kitchens never run dry.' },
+];
+---
+<Base title="About Us" description={`About ${SITE.name}, a wholesale spice supplier in Galgamuwa, in Sri Lanka's Wayamba (North Western) Province.`}>
+  <section class="a-hero">
+    <FloatingSpices seed="about" count={12} />
+    <div class="container a-hero-grid">
+      <div>
+        <span class="eyebrow" data-reveal>Our story</span>
+        <h1 data-split data-split-now>Rooted in <em class="accent">Wayamba</em></h1>
+        <p class="lead" data-reveal>We are a spice business based in Galgamuwa, in the heart of Sri Lanka's North Western Province, known locally as Wayamba. We supply spices in bulk to shops, wholesalers, hotels and food makers across the island.</p>
+      </div>
+      <div class="a-logo" data-reveal>
+        <Image src={logoFull} alt={SITE.name} width={520} loading="eager" />
+      </div>
+    </div>
+  </section>
+
+  <section class="section story">
+    <div class="container story-grid">
+      <div class="story-quote" data-speed="0.15">
+        <p>Our logo is a sheaf of grain, because good food starts in the field.</p>
+      </div>
+      <div class="story-text">
+        <p data-reveal>Sri Lanka has traded spices with the world for more than two thousand years. Ceylon cinnamon, pepper, cloves and cardamom from our island were prized in ancient markets, and they are still among the finest you can buy.</p>
+        <p data-reveal>Wayamba Food Products was started to bring that same quality to local businesses at fair wholesale prices. We buy directly from growers and collectors, then clean, grade, grind and pack every batch in Galgamuwa.</p>
+        <p data-reveal>Whether you need a few kilos of Alba cinnamon for a gift shop or 50 kg sacks of pepper for a distributor, we will quote you a clear price and deliver on time.</p>
+        <a class="btn" href={u('/spices/')} data-reveal data-magnetic>See our spices <Arrow /></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section values grain">
+    <div class="container">
+      <span class="eyebrow light">What we stand for</span>
+      <h2 data-split>Four promises on every bag</h2>
+      <div class="v-grid">
+        {values.map((v, i) => (
+          <div class="v" data-reveal>
+            <span>{String(i + 1).padStart(2, '0')}</span>
+            <h3>{v.t}</h3>
+            <p>{v.d}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section a-cta">
+    <div class="container a-cta-inner">
+      <h2 data-split>Visit us in Galgamuwa, or just send a message.</h2>
+      <div class="a-cta-btns" data-reveal>
+        <a class="btn btn-wa btn-lg" href={waLink(generalMessage)} target="_blank" rel="noopener" data-magnetic><WaIcon /> WhatsApp us</a>
+        <a class="btn btn-ghost btn-lg" href={u('/contact/')}>Contact details <Arrow /></a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .a-hero { position: relative; overflow: hidden; padding: 170px 0 90px; background: linear-gradient(180deg, var(--cream), var(--paper)); }
+  .a-hero :global(.floaters) { opacity: 0.3; }
+  .a-hero-grid { position: relative; display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 40px; align-items: center; }
+  .a-hero h1 { margin: 16px 0 22px; }
+  .a-logo img { width: 100%; max-width: 420px; margin-left: auto; height: auto; }
+  @media (max-width: 860px) { .a-hero-grid { grid-template-columns: 1fr; } .a-logo img { margin: 0 auto; max-width: 280px; } .a-hero { padding-top: 130px; } }
+
+  .story-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(40px, 7vw, 110px); align-items: center; }
+  .story-quote p { font-family: var(--font-display); font-size: clamp(1.8rem, 3.6vw, 3rem); line-height: 1.15; font-style: italic; color: var(--forest); margin: 0; }
+  .story-text p { font-size: 1.1rem; }
+  .story-text .btn { margin-top: 12px; }
+  @media (max-width: 860px) { .story-grid { grid-template-columns: 1fr; } }
+
+  .values { background: var(--forest); color: #fff; overflow: hidden; }
+  .values .eyebrow.light { color: var(--lime); }
+  .values h2 { margin: 14px 0 50px; }
+  .v-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
+  .v { padding: 30px 26px; border-radius: var(--radius-lg); background: rgba(255, 255, 255, 0.06); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1); }
+  .v span { font-family: var(--font-display); color: var(--lime); font-size: 1.1rem; }
+  .v h3 { margin: 16px 0 10px; }
+  .v p { color: rgba(255, 255, 255, 0.72); margin: 0; }
+  @media (max-width: 960px) { .v-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 520px) { .v-grid { grid-template-columns: 1fr; } }
+
+  .a-cta-inner { text-align: center; display: grid; justify-items: center; gap: 30px; }
+  .a-cta-inner h2 { max-width: 20ch; }
+  .a-cta-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+</style>

@@ -1,0 +1,121 @@
+---
+import Base from '../layouts/Base.astro';
+import WaIcon from '../components/WaIcon.astro';
+import { getProducts } from '../lib/catalog';
+import { waLink, generalMessage } from '../lib/whatsapp';
+import { SITE, WHATSAPP_NUMBER } from '../config';
+
+const products = await getProducts();
+const mapSrc = `https://maps.google.com/maps?q=${encodeURIComponent(SITE.mapQuery)}&z=14&output=embed`;
+---
+<Base title="Contact" description={`Contact ${SITE.name} in Galgamuwa, Sri Lanka for wholesale spice prices. Call ${SITE.phone} or message us on WhatsApp.`}>
+  <section class="c-hero">
+    <div class="container">
+      <span class="eyebrow" data-reveal>Contact</span>
+      <h1 data-split data-split-now>Let's talk <em class="accent">wholesale</em></h1>
+      <p class="lead" data-reveal>The fastest way to get a price is WhatsApp. Fill in the form and it will open WhatsApp with your request ready to send.</p>
+    </div>
+  </section>
+
+  <section class="c-body">
+    <div class="container c-grid">
+      <form class="c-form" id="cform" data-reveal onsubmit="return false">
+        <div class="row2">
+          <label class="field"><span>Your name</span><input name="name" required placeholder="e.g. Nimal Perera" /></label>
+          <label class="field"><span>Business <em>(optional)</em></span><input name="biz" placeholder="e.g. Perera Traders" /></label>
+        </div>
+        <fieldset>
+          <legend>Spices you need</legend>
+          <div class="picks">
+            {products.map((p) => (
+              <label class="pick"><input type="checkbox" name="spice" value={p.name} /><span>{p.name}</span></label>
+            ))}
+          </div>
+        </fieldset>
+        <div class="row2">
+          <label class="field"><span>Approx. quantity</span><input name="qty" placeholder="e.g. 100 kg per month" /></label>
+          <label class="field"><span>Your town</span><input name="town" placeholder="e.g. Kurunegala" /></label>
+        </div>
+        <label class="field"><span>Message <em>(optional)</em></span><textarea name="msg" rows="3" placeholder="Grades, pack sizes, delivery dates…"></textarea></label>
+        <a class="btn btn-wa btn-lg" id="c-send" href={waLink(generalMessage)} target="_blank" rel="noopener"><WaIcon /> Send on WhatsApp</a>
+        <p class="note">Prefer email? <a id="c-mail" href={`mailto:${SITE.email}`}>Send the same request by email</a>.</p>
+      </form>
+
+      <aside class="c-info">
+        <div class="info-card" data-reveal>
+          <h3>{SITE.name}</h3>
+          <dl>
+            <dt>Address</dt><dd>{SITE.address}</dd>
+            <dt>Phone</dt><dd><a href={`tel:${SITE.phone.replace(/\s/g, '')}`}>{SITE.phone}</a></dd>
+            <dt>Email</dt><dd><a href={`mailto:${SITE.email}`}>{SITE.email}</a></dd>
+            <dt>Hours</dt><dd>{SITE.hours}</dd>
+          </dl>
+          <a class="btn btn-wa" href={waLink(generalMessage)} target="_blank" rel="noopener"><WaIcon /> Quick WhatsApp</a>
+        </div>
+        <div class="map" data-reveal>
+          <iframe src={mapSrc} title="Map to Wayamba Food Products, Galgamuwa" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        </div>
+      </aside>
+    </div>
+  </section>
+</Base>
+
+<script define:vars={{ number: WHATSAPP_NUMBER, bizName: SITE.name, email: SITE.email }}>
+  const form = document.getElementById('cform');
+  const send = document.getElementById('c-send');
+  const mail = document.getElementById('c-mail');
+  function build() {
+    const fd = new FormData(form);
+    const g = (k) => (fd.get(k) || '').toString().trim();
+    const spices = fd.getAll('spice').join(', ');
+    const lines = [
+      `Hello ${bizName}, I'd like your wholesale prices.`,
+      '',
+      g('name') && `• Name: ${g('name')}`,
+      g('biz') && `• Business: ${g('biz')}`,
+      spices && `• Spices: ${spices}`,
+      g('qty') && `• Quantity: ${g('qty')}`,
+      g('town') && `• Town: ${g('town')}`,
+      g('msg') && `\n${g('msg')}`,
+    ].filter((l) => typeof l === 'string');
+    const text = lines.join('\n');
+    send.href = `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
+    mail.href = `mailto:${email}?subject=${encodeURIComponent('Wholesale price inquiry')}&body=${encodeURIComponent(text)}`;
+  }
+  form.addEventListener('input', build);
+  form.addEventListener('change', build);
+  build();
+</script>
+
+<style>
+  .c-hero { padding: 170px 0 50px; background: linear-gradient(180deg, var(--cream), var(--paper)); }
+  .c-hero h1 { margin: 16px 0 20px; }
+  .c-body { padding: 30px 0 clamp(80px, 10vw, 140px); }
+  .c-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: clamp(30px, 5vw, 70px); align-items: start; }
+  .c-form { background: #fff; border-radius: var(--radius-lg); padding: clamp(22px, 3vw, 40px); box-shadow: var(--shadow), inset 0 0 0 1px var(--line); display: grid; gap: 22px; }
+  fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+  legend { font-weight: 700; font-size: 0.9rem; margin-bottom: 10px; }
+  .picks { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pick input { position: absolute; opacity: 0; pointer-events: none; }
+  .pick span { display: inline-block; padding: 8px 14px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--line); font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: background .2s, color .2s; }
+  .pick input:checked + span { background: var(--forest); color: #fff; box-shadow: none; }
+  .pick input:focus-visible + span { outline: 2px solid var(--leaf); outline-offset: 2px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .field { display: grid; gap: 6px; }
+  .field span { font-weight: 700; font-size: 0.9rem; }
+  .field em { font-weight: 400; color: var(--muted); font-style: normal; }
+  .field input, .field textarea { border-radius: 12px; border: 0; box-shadow: inset 0 0 0 1.5px var(--line); padding: 14px 16px; font: inherit; background: var(--paper); min-width: 0; resize: vertical; }
+  .field input:focus, .field textarea:focus { outline: none; box-shadow: inset 0 0 0 2px var(--leaf); }
+  .note { font-size: 0.88rem; color: var(--muted); margin: -8px 0 0; text-align: center; }
+  .note a { text-decoration: underline; }
+  .c-info { display: grid; gap: 22px; position: sticky; top: 110px; }
+  .info-card { background: var(--forest); color: #fff; border-radius: var(--radius-lg); padding: 32px; }
+  .info-card h3 { margin-bottom: 20px; }
+  .info-card dl { margin: 0 0 24px; display: grid; gap: 4px; }
+  .info-card dt { font-size: 0.75rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--lime); font-weight: 700; margin-top: 12px; }
+  .info-card dd { margin: 0; color: rgba(255, 255, 255, 0.86); word-break: break-word; }
+  .map { border-radius: var(--radius-lg); overflow: hidden; aspect-ratio: 4 / 3; background: var(--cream); }
+  .map iframe { width: 100%; height: 100%; border: 0; filter: saturate(0.7) sepia(0.15); }
+  @media (max-width: 900px) { .c-grid { grid-template-columns: 1fr; } .c-info { position: static; } .c-hero { padding-top: 130px; } }
+  @media (max-width: 520px) { .row2 { grid-template-columns: 1fr; } }
+</style>

@@ -1,0 +1,48 @@
+---
+// Floating illustrated spices used over hero sections.
+import { SHAPES, type ShapeKey } from '../lib/shapes';
+import { seeded } from '../lib/rand';
+
+interface Props { seed?: string; count?: number; shapes?: ShapeKey[]; colors?: string[] }
+const {
+  seed = 'hero',
+  count = 16,
+  shapes = ['quill', 'seed', 'clove', 'pod', 'chilli', 'leaf', 'blade', 'nut'],
+  colors = ['#c47a3d', '#d9a21b', '#9b2c1e', '#b5c72c', '#7a9a2e', '#6b4a32', '#e6d8b8'],
+} = Astro.props;
+const rnd = seeded(seed);
+const items = Array.from({ length: count }, (_, i) => {
+  const key = shapes[i % shapes.length];
+  return {
+    key,
+    s: SHAPES[key],
+    color: colors[Math.floor(rnd() * colors.length)],
+    left: (rnd() * 100).toFixed(1),
+    top: (rnd() * 100).toFixed(1),
+    size: Math.round(28 + rnd() * 70),
+    rot: Math.round(rnd() * 360),
+    depth: (0.3 + rnd() * 1.7).toFixed(2),
+    blur: rnd() > 0.78 ? 3 : 0,
+  };
+});
+---
+<div class="floaters" aria-hidden="true">
+  {items.map((it) => (
+    <svg
+      class="floater"
+      viewBox="0 0 100 100"
+      data-depth={it.depth}
+      style={`left:${it.left}%;top:${it.top}%;width:${it.size}px;--r:${it.rot}deg;${it.blur ? `filter:blur(${it.blur}px);` : ''}`}
+    >
+      <g transform={`rotate(${it.rot} 50 50)`}>
+        <path d={it.s.body} fill={it.color} />
+        {it.s.detail && <path d={it.s.detail} fill="none" stroke="rgba(0,0,0,.28)" stroke-width="2.4" stroke-linecap="round" />}
+        {it.s.highlight && <path d={it.s.highlight} fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2.6" stroke-linecap="round" />}
+      </g>
+    </svg>
+  ))}
+</div>
+<style>
+  .floaters { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .floater { position: absolute; opacity: 0.9; will-change: transform; }
+</style>

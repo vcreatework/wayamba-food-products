@@ -1,0 +1,375 @@
+---
+import Base from '../../layouts/Base.astro';
+import ProductMedia from '../../components/ProductMedia.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import WaIcon from '../../components/WaIcon.astro';
+import Arrow from '../../components/Arrow.astro';
+import { getProducts } from '../../lib/catalog';
+import type { Product } from '../../lib/types';
+import { u, abs } from '../../lib/url';
+import { waLink, productMessage } from '../../lib/whatsapp';
+import { SITE, WHATSAPP_NUMBER } from '../../config';
+
+export async function getStaticPaths() {
+  const products = await getProducts();
+  return products.map((p) => ({ params: { slug: p.slug }, props: { product: p } }));
+}
+
+const { product: p } = Astro.props as { product: Product };
+const all = await getProducts();
+const related = [
+  ...all.filter((x) => x.slug !== p.slug && x.category === p.category),
+  ...all.filter((x) => x.slug !== p.slug && x.category !== p.category && x.featured),
+].slice(0, 3);
+const idx = all.findIndex((x) => x.slug === p.slug);
+const next = all[(idx + 1) % all.length];
+const [bg, accent] = p.palette ?? ['#2a1e12', '#b07a3a'];
+const pageUrl = abs(`/spices/${p.slug}/`, Astro.site);
+const defaultMsg = productMessage(p.name, pageUrl);
+
+const specs = [
+  p.origin && { k: 'Origin', v: p.origin },
+  p.moq && { k: 'Minimum order', v: p.moq },
+  p.packSizes?.length && { k: 'Pack sizes', v: p.packSizes.join(' · ') },
+  p.forms?.length && { k: 'Available as', v: p.forms.join(' · ') },
+  p.shelfLife && { k: 'Shelf life', v: p.shelfLife },
+  p.certifications?.length && { k: 'Certifications', v: p.certifications.join(' · ') },
+].filter(Boolean) as { k: string; v: string }[];
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: p.name,
+  description: p.description ?? p.tagline,
+  category: p.category,
+  brand: { '@type': 'Brand', name: SITE.name },
+  url: pageUrl,
+};
+const isVideoFile = p.video && /\.(mp4|webm)(\?|$)/i.test(p.video);
+const ytId = p.video?.match(/(?:youtu\.be\/|v=|embed\/)([\w-]{11})/)?.[1];
+---
+<Base title={`${p.name} Wholesale`} description={`${p.name}${p.localName ? ` (${p.localName})` : ''}: ${p.tagline ?? ''} Wholesale supply from ${SITE.name}, Sri Lanka.`} dark jsonLd={jsonLd}>
+  <section class="p-hero" style={`--bg:${bg};--ac:${accent}`} data-parallax-host>
+    <div class="p-hero-art" id="art">
+      <ProductMedia product={p} mode="hero" eager sizes="(max-width: 900px) 100vw, 55vw" />
+    </div>
+    <div class="p-hero-shade"></div>
+    <div class="container p-hero-inner">
+      <nav class="crumbs" aria-label="Breadcrumb" data-reveal>
+        <a href={u('/spices/')}>Spices</a><span>/</span><a href={u(`/spices/?cat=${encodeURIComponent(p.category)}`)}>{p.category}</a>
+      </nav>
+      <h1 data-split data-split-now>{p.name}</h1>
+      {p.localName && <p class="local" data-reveal>{p.localName}</p>}
+      {p.tagline && <p class="tagline" data-reveal>{p.tagline}</p>}
+      <div class="hero-btns" data-reveal>
+        <a class="btn btn-wa btn-lg" href={waLink(defaultMsg)} target="_blank" rel="noopener" data-magnetic data-wa-quick><WaIcon /> Inquire wholesale price</a>
+        <a class="btn btn-ghost-light btn-lg" href="#inquire">Choose grade &amp; pack <Arrow /></a>
+      </div>
+    </div>
+  </section>
+
+  {p.description && (
+    <section class="section about-spice">
+      <div class="container about-grid">
+        <span class="eyebrow">About this spice</span>
+        <p class="big" data-reveal>{p.description}</p>
+      </div>
+    </section>
+  )}
+
+  {specs.length > 0 && (
+    <section class="specs-wrap">
+      <div class="container">
+        <dl class="specs">
+          {specs.map((s) => (
+            <div class="spec" data-reveal>
+              <dt>{s.k}</dt>
+              <dd>{s.v}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </section>
+  )}
+
+  <section class="section inquire" id="inquire" style={`--ac:${accent}`}>
+    <div class="container inq-grid">
+      <div class="inq-left">
+        <span class="eyebrow">Grades &amp; inquiry</span>
+        <h2 data-split>Choose what you need</h2>
+        <p class="lead" data-reveal>Select a grade and pack size, add your quantity, and we'll send today's wholesale price on WhatsApp.</p>
+        {p.uses && p.uses.length > 0 && (
+          <div class="uses" data-reveal>
+            <p class="muted small-label">Popular with</p>
+            <div class="chips">{p.uses.map((x) => <span class="chip">{x}</span>)}</div>
+          </div>
+        )}
+      </div>
+
+      <form class="inq-card" id="inq" data-reveal onsubmit="return false">
+        {p.variants && p.variants.length > 0 && (
+          <fieldset>
+            <legend>Grade / variant</legend>
+            <div class="variants">
+              {p.variants.map((v, i) => (
+                <label class="variant">
+                  <input type="radio" name="variant" value={v.name} checked={i === 0} />
+                  <span class="v-box">
+                    <strong>{v.name}</strong>
+                    {v.note && <small>{v.note}</small>}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
+        {p.packSizes && p.packSizes.length > 0 && (
+          <fieldset>
+            <legend>Pack size</legend>
+            <div class="packs">
+              {p.packSizes.map((s, i) => (
+                <label class="pack"><input type="radio" name="pack" value={s} checked={i === p.packSizes!.length - 1} /><span>{s}</span></label>
+              ))}
+            </div>
+          </fieldset>
+        )}
+        <div class="row2">
+          <label class="field">
+            <span>Quantity needed</span>
+            <input name="qty" type="text" inputmode="text" placeholder={p.moq ? `e.g. 50 kg (min. ${p.moq})` : 'e.g. 50 kg'} />
+          </label>
+          <label class="field">
+            <span>Your town <em>(optional)</em></span>
+            <input name="town" type="text" placeholder="e.g. Kurunegala" />
+          </label>
+        </div>
+        <label class="field">
+          <span>Business name <em>(optional)</em></span>
+          <input name="biz" type="text" placeholder="e.g. Silva Stores" />
+        </label>
+        <a class="btn btn-wa btn-lg inq-btn" id="inq-btn" href={waLink(defaultMsg)} target="_blank" rel="noopener"><WaIcon /> Send inquiry on WhatsApp</a>
+        <p class="note">Opens WhatsApp with your request and a link to this page. Prices are quoted per order.</p>
+      </form>
+    </div>
+  </section>
+
+  {p.video && (
+    <section class="video-sec">
+      <div class="container">
+        <div class="video-frame" data-reveal>
+          {isVideoFile ? (
+            <video src={p.video} controls muted playsinline preload="none" />
+          ) : ytId ? (
+            <iframe src={`https://www.youtube-nocookie.com/embed/${ytId}`} title={`${p.name} video`} loading="lazy" allow="accelerometer; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  )}
+
+  {related.length > 0 && (
+    <section class="section related">
+      <div class="container">
+        <div class="rel-head">
+          <h2 data-split>You may also need</h2>
+          <a class="btn btn-ghost" href={u('/spices/')}>All spices <Arrow /></a>
+        </div>
+        <div class="rel-grid">{related.map((r) => <div data-reveal><ProductCard product={r} /></div>)}</div>
+      </div>
+    </section>
+  )}
+
+  <a class="next" href={u(`/spices/${next.slug}/`)} style={`--bg:${next.palette?.[0] ?? '#222'}`}>
+    <div class="container next-inner">
+      <span class="eyebrow light">Next spice</span>
+      <span class="next-name">{next.name} <Arrow /></span>
+    </div>
+  </a>
+
+  <div class="sticky-inq" id="sticky-inq">
+    <span><strong>{p.name}</strong><small>Wholesale price on request</small></span>
+    <a class="btn btn-wa" href={waLink(defaultMsg)} target="_blank" rel="noopener" data-wa-quick><WaIcon /> Inquire</a>
+  </div>
+</Base>
+
+<script define:vars={{ name: p.name, pageUrl, number: WHATSAPP_NUMBER, bizName: SITE.name }}>
+  // Builds the WhatsApp message from the chosen options.
+  const form = document.getElementById('inq');
+  const btn = document.getElementById('inq-btn');
+  function build() {
+    const fd = new FormData(form);
+    const variant = fd.get('variant');
+    const pack = fd.get('pack');
+    const qty = (fd.get('qty') || '').toString().trim();
+    const town = (fd.get('town') || '').toString().trim();
+    const biz = (fd.get('biz') || '').toString().trim();
+    const lines = [
+      `Hello ${bizName},`,
+      `I'd like to know your wholesale price for *${name}*.`,
+      '',
+      variant && `• Grade: ${variant}`,
+      pack && `• Pack size: ${pack}`,
+      qty && `• Quantity: ${qty}`,
+      town && `• Deliver to: ${town}`,
+      biz && `• Business: ${biz}`,
+      '',
+      `Product link: ${pageUrl}`,
+    ].filter((l) => typeof l === 'string');
+    const text = lines.join('\n').replace(/\n{3,}/g, '\n\n');
+    const href = `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
+    btn.href = href;
+    document.querySelectorAll('[data-wa-quick]').forEach((a) => (a.href = href));
+  }
+  form.addEventListener('input', build);
+  form.addEventListener('change', build);
+  build();
+</script>
+
+<script>
+  import { gsap, ScrollTrigger, reduce } from '../../scripts/animations';
+
+  // Show the sticky inquiry bar once the hero is out of view, hide it over the form.
+  const bar = document.getElementById('sticky-inq')!;
+  ScrollTrigger.create({
+    trigger: '.p-hero', start: 'bottom 80px',
+    onEnter: () => bar.classList.add('show'), onLeaveBack: () => bar.classList.remove('show'),
+  });
+  ScrollTrigger.create({
+    trigger: '#inquire', start: 'top 70%', end: 'bottom 30%',
+    onToggle: (self) => bar.classList.toggle('over-form', self.isActive),
+  });
+
+  if (!reduce) {
+    const art = document.getElementById('art')!;
+    const hero = art.querySelector('.sp-hero');
+    const pieces = art.querySelectorAll<SVGGElement>('.sp:not(.sp-hero)');
+
+    // Intro: big spice drops in, small pieces burst outwards
+    const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
+    if (hero) tl.from(hero, { scale: 0.6, rotation: -25, opacity: 0, transformOrigin: '50% 50%', duration: 1.8 }, 0.1);
+    tl.from(pieces, { scale: 0, opacity: 0, transformOrigin: '50% 50%', duration: 1.4, stagger: { each: 0.03, from: 'random' } }, 0.2);
+    tl.from('.p-hero-art img', { scale: 1.25, opacity: 0, duration: 1.8 }, 0);
+
+    // Hero spice slowly turns
+    if (hero) gsap.to(hero, { rotation: 8, transformOrigin: '50% 50%', duration: 6, ease: 'sine.inOut', repeat: -1, yoyo: true, delay: 1.9 });
+
+    // Mouse parallax on the artwork
+    if (window.matchMedia('(hover: hover)').matches) {
+      const sec = document.querySelector<HTMLElement>('.p-hero')!;
+      const movers = [...pieces].map((p) => ({
+        el: p.firstElementChild as SVGGElement,
+        d: parseFloat(p.dataset.depth ?? '1'),
+      }));
+      sec.addEventListener('pointermove', (e) => {
+        const x = e.clientX / window.innerWidth - 0.5;
+        const y = e.clientY / window.innerHeight - 0.5;
+        movers.forEach(({ el, d }) => gsap.to(el, { x: x * 40 * d, y: y * 40 * d, duration: 1.2, ease: 'power3.out', overwrite: 'auto' }));
+      });
+    }
+
+    // Scroll: hero art zooms and text lifts away
+    gsap.to('.p-hero-art', { scale: 1.12, yPercent: 8, ease: 'none', scrollTrigger: { trigger: '.p-hero', start: 'top top', end: 'bottom top', scrub: true } });
+    gsap.to('.p-hero-inner', { yPercent: -20, opacity: 0, ease: 'none', scrollTrigger: { trigger: '.p-hero', start: '30% top', end: 'bottom top', scrub: true } });
+
+    // Variants pop in one by one
+    gsap.from('.variant', { opacity: 0, y: 24, stagger: 0.05, duration: 0.7, ease: 'power3.out', scrollTrigger: { trigger: '.variants', start: 'top 85%' } });
+    gsap.from('.pack', { opacity: 0, scale: 0.8, stagger: 0.04, duration: 0.5, ease: 'back.out(2)', scrollTrigger: { trigger: '.packs', start: 'top 90%' } });
+
+    // Next-spice band grows on approach
+    gsap.from('.next-name', { xPercent: -10, opacity: 0.3, ease: 'none', scrollTrigger: { trigger: '.next', start: 'top bottom', end: 'top 50%', scrub: true } });
+  }
+</script>
+
+<style>
+  .p-hero { position: relative; min-height: 100svh; background: var(--bg); color: #fff; overflow: hidden; display: flex; align-items: flex-end; padding: 130px 0 clamp(60px, 9vh, 110px); }
+  .p-hero-art { position: absolute; top: 0; right: 0; bottom: 0; width: 62%; }
+  .p-hero-art :global(.spice-art), .p-hero-art :global(img) { width: 100%; height: 100%; object-fit: cover; }
+  .p-hero-shade { position: absolute; inset: 0; background: linear-gradient(90deg, var(--bg) 30%, color-mix(in srgb, var(--bg) 55%, transparent) 55%, transparent 80%), linear-gradient(0deg, color-mix(in srgb, var(--bg) 80%, transparent), transparent 40%); pointer-events: none; }
+  .p-hero-inner { position: relative; z-index: 2; }
+  .crumbs { display: flex; gap: 10px; font-size: 0.85rem; font-weight: 600; color: rgba(255, 255, 255, 0.65); margin-bottom: 20px; }
+  .crumbs a:hover { color: #fff; }
+  .p-hero h1 { font-size: clamp(3rem, 9vw, 8rem); max-width: 10ch; font-weight: 400; }
+  .local { font-family: var(--font-display); font-style: italic; font-size: clamp(1.2rem, 2vw, 1.6rem); color: var(--ac); filter: brightness(1.35); margin: 12px 0 0; }
+  .tagline { max-width: 40ch; font-size: clamp(1.05rem, 1.5vw, 1.25rem); color: rgba(255, 255, 255, 0.8); margin: 18px 0 0; }
+  .hero-btns { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 32px; }
+  .btn-ghost-light { --bg: transparent; --fg: #fff; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.4); }
+  .btn-ghost-light:hover { background: rgba(255, 255, 255, 0.1); box-shadow: inset 0 0 0 1.5px #fff; }
+  @media (max-width: 900px) {
+    .p-hero-art { width: 100%; height: 62%; bottom: auto; }
+    .p-hero-shade { background: linear-gradient(0deg, var(--bg) 42%, color-mix(in srgb, var(--bg) 40%, transparent) 70%, color-mix(in srgb, var(--bg) 30%, transparent)); }
+  }
+  @media (max-width: 560px) { .hero-btns .btn { width: 100%; } }
+
+  .about-grid { display: grid; grid-template-columns: 220px 1fr; gap: 30px; }
+  .big { font-family: var(--font-display); font-size: clamp(1.4rem, 2.6vw, 2.2rem); line-height: 1.32; margin: 0; }
+  @media (max-width: 760px) { .about-grid { grid-template-columns: 1fr; } }
+
+  .specs { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; border-top: 1px solid var(--line); }
+  .spec { padding: 28px 24px 28px 0; border-bottom: 1px solid var(--line); }
+  .spec dt { font-size: 0.78rem; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700; color: var(--leaf); margin-bottom: 8px; }
+  .spec dd { margin: 0; font-size: 1.1rem; font-weight: 600; }
+  @media (max-width: 760px) { .specs { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 460px) { .specs { grid-template-columns: 1fr; } }
+
+  .inq-grid { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: clamp(36px, 6vw, 90px); align-items: start; }
+  .inq-left { position: sticky; top: 110px; }
+  .inq-left h2 { margin: 14px 0 20px; }
+  .uses { margin-top: 30px; }
+  .small-label { font-size: 0.85rem; margin-bottom: 10px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .inq-card { background: #fff; border-radius: var(--radius-lg); padding: clamp(22px, 3vw, 38px); box-shadow: var(--shadow), inset 0 0 0 1px var(--line); display: grid; gap: 24px; }
+  fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+  legend { font-weight: 800; font-size: 0.8rem; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 12px; color: var(--muted); }
+  .variants { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .variant input, .pack input { position: absolute; opacity: 0; pointer-events: none; }
+  .v-box { display: block; height: 100%; padding: 14px 16px; border-radius: 14px; box-shadow: inset 0 0 0 1.5px var(--line); cursor: pointer; transition: box-shadow .25s, background .25s; }
+  .v-box strong { display: block; }
+  .v-box small { display: block; color: var(--muted); font-size: 0.84rem; line-height: 1.4; margin-top: 2px; }
+  .variant:hover .v-box { background: var(--paper); }
+  .variant input:checked + .v-box { box-shadow: inset 0 0 0 2px var(--forest); background: rgba(181, 199, 44, 0.12); }
+  .variant input:focus-visible + .v-box, .pack input:focus-visible + span { outline: 2px solid var(--leaf); outline-offset: 2px; }
+  .packs { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pack span { display: inline-block; padding: 9px 16px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px var(--line); font-weight: 600; font-size: 0.92rem; cursor: pointer; transition: background .25s, color .25s; }
+  .pack input:checked + span { background: var(--forest); color: #fff; box-shadow: none; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .field { display: grid; gap: 6px; }
+  .field span { font-weight: 700; font-size: 0.9rem; }
+  .field em { font-weight: 400; color: var(--muted); font-style: normal; }
+  .field input { height: 52px; border-radius: 12px; border: 0; box-shadow: inset 0 0 0 1.5px var(--line); padding: 0 16px; font: inherit; background: var(--paper); transition: box-shadow .25s; min-width: 0; }
+  .field input:focus { outline: none; box-shadow: inset 0 0 0 2px var(--leaf); }
+  .inq-btn { width: 100%; }
+  .note { font-size: 0.85rem; color: var(--muted); margin: -10px 0 0; text-align: center; }
+  @media (max-width: 900px) { .inq-grid { grid-template-columns: 1fr; } .inq-left { position: static; } }
+  @media (max-width: 520px) { .variants, .row2 { grid-template-columns: 1fr; } }
+
+  .video-sec { padding-bottom: clamp(60px, 8vw, 110px); }
+  .video-frame { aspect-ratio: 16 / 9; border-radius: var(--radius-lg); overflow: hidden; background: #000; }
+  .video-frame video, .video-frame iframe { width: 100%; height: 100%; border: 0; object-fit: cover; }
+
+  .related { background: var(--cream); }
+  .rel-head { display: flex; justify-content: space-between; align-items: end; gap: 20px; flex-wrap: wrap; margin-bottom: 40px; }
+  .rel-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
+  @media (max-width: 860px) { .rel-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .rel-grid { grid-template-columns: 1fr; } }
+
+  .next { display: block; background: var(--bg); color: #fff; padding: clamp(60px, 9vw, 120px) 0; overflow: hidden; }
+  .next-inner { display: grid; gap: 10px; }
+  .next .eyebrow.light { color: var(--lime); }
+  .next-name { font-family: var(--font-display); font-size: clamp(2.6rem, 8vw, 7rem); line-height: 1; display: inline-flex; align-items: center; gap: 0.3em; transition: gap .5s var(--ease); }
+  .next-name :global(svg) { width: 0.6em; height: 0.6em; }
+  .next:hover .next-name { gap: 0.6em; }
+
+  .sticky-inq {
+    position: fixed; left: 50%; bottom: 18px; z-index: 55; transform: translate(-50%, 150%);
+    display: flex; align-items: center; gap: 18px; padding: 10px 10px 10px 22px; border-radius: 999px;
+    background: rgba(18, 38, 26, 0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); color: #fff;
+    box-shadow: 0 20px 40px -14px rgba(0, 0, 0, 0.5); transition: transform .6s var(--ease); width: max-content; max-width: calc(100vw - 110px);
+  }
+  .sticky-inq.show { transform: translate(-50%, 0); }
+  .sticky-inq.over-form { transform: translate(-50%, 150%); }
+  .sticky-inq span { display: grid; line-height: 1.2; min-width: 0; }
+  .sticky-inq strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sticky-inq small { opacity: .65; font-size: 0.78rem; }
+  .sticky-inq .btn { padding: 11px 18px; }
+  @media (max-width: 560px) { .sticky-inq { left: 16px; transform: translate(0, 150%); max-width: calc(100vw - 100px); } .sticky-inq.show { transform: translate(0, 0); } .sticky-inq.over-form { transform: translate(0, 150%); } .sticky-inq small { display: none; } }
+</style>
